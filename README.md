@@ -1,61 +1,76 @@
-# EvalBee Item Analysis
 
-A Python program for analyzing item-level data from EvalBee exports.
+# EvalBee Item Analysis  
 
-## Description
+A Python program for analyzing item-level data from EvalBee exports.  
 
-This program takes an Excel file exported from EvalBee as input and performs various item-level analyses, including reliability calculations and topic analysis.
+## Description  
 
-## Requirements
+EvalBee Item Analysis is a tool designed to process Excel files exported from EvalBee, providing item-level analyses such as:  
+- Reliability calculations  
+- Topic analysis  
 
-* Python 3.x
-* pandas
-* numpy
-* pingouin
-* scipy
-* openpyxl
+## Requirements  
 
-## Usage
+Ensure the following are installed:  
+- Python 3.9 or later  
+- Libraries:  
+  - `pandas`  
+  - `numpy`  
+  - `pingouin`  
+  - `scipy`  
+  - `openpyxl`  
 
-To run the program, simply execute the script with the path to the input Excel file as an argument:
-```bash
-python item_analysis.py <input_file.xlsx> [<output_file.xlsx>]
-```
+## Installation  
 
-## Installation
-Install the dependencies using pip or if you are using the Anaconda environment, conda. Python 3.9.x and above is supported.
+You can set up the program environment using either `pip` or `conda`.  
 
-### Using `pip`.
-1. Create the virtual environment.
-```bash
-#Replace <env> with environment name e.g. `venv`
-python3 -m venv <env>
-```
-2. Activate the environment.
-```bash
-#On Windows
-./<env>/Scripts/activate
-#On MacOS/Linux
-source ./<env>/bin/activate
+### Using `pip`  
 
-```
-3. Install the dependencies.
-```bash
-pip install pandas numpy pingouin scipy openpyxl
-```
+1. **Create a virtual environment**  
+   ```bash  
+   python3 -m venv <env_name>  
+   ```  
+2. **Activate the virtual environment**  
+   - **Windows**:  
+     ```bash  
+     .\<env_name>\Scripts\activate  
+     ```  
+   - **macOS/Linux**:  
+     ```bash  
+     source <env_name>/bin/activate  
+     ```  
+3. **Install dependencies**  
+   ```bash  
+   pip install pandas numpy pingouin scipy openpyxl  
+   ```  
 
-### Using conda.
-1. Create the virtual environment
-```bash
-#Replace <env> with environment name(e.g. 'venv') and <python_name> with preferred python version(e.g. 3.10) 
-conda create -p ./<env> python=<python_version>
+### Using `conda`  
 
-```
-2. Activate the environment
-```bash
-conda activate ./<env>
-```
-3. Install the dependencies.
-```bash
-conda install -c conda-forge pandas numpy pingouin scipy openpyxl
-```
+1. **Create a virtual environment**  
+   ```bash  
+   conda create -p ./<env_name> python=<python_version>  
+   ```  
+   Replace `<env_name>` with your preferred environment name (e.g., `venv`) and `<python_version>` with your desired Python version (e.g., 3.10).  
+
+2. **Activate the environment**  
+   ```bash  
+   conda activate ./<env_name>  
+   ```  
+
+3. **Install dependencies**  
+   ```bash  
+   conda install -c conda-forge pandas numpy pingouin scipy openpyxl  
+   ```  
+
+## Usage  
+
+Run the program by providing the path to the input Excel file. Optionally, you can specify an output file path for the results.  
+```bash  
+python item_analysis.py <input_file.xlsx> [<output_file.xlsx>]  
+```  
+
+## Notes  
+
+- Replace `<env_name>` with your chosen environment name in the commands above.  
+- Replace `<python_version>` with your preferred Python version when using `conda`.  
+- If you encounter issues with dependencies, ensure the correct Python version and library versions are installed.  
