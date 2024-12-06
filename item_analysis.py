@@ -6,30 +6,34 @@ from pprint import pprint
 import pingouin as pg
 import scipy.stats as stats
 import argparse
+from sklearn.metrics import jaccard_score
 
 class ItemAnalysis:
     def __init__(self, path, output_path):
         self.path = path
         self.output_path = output_path
 
+        self.options_pattern = r'Q{1}\s[0-9]+\sOptions'
+        self.key_pattern = r'Q{1}\s[0-9]+\sKey'
+        self.marks_pattern = r'Q{1}\s[0-9]+\sMarks'
+
         self.df = pd.read_excel(Path(self.path))
         self.run_calculation(self.df)
+        self.correlation_calculation(self.df)
+
 
     def item_analysis(self, base_df):
-        options_pattern = r'Q{1}\s[0-9]+\sOptions'
-        key_pattern = r'Q{1}\s[0-9]+\sKey'
-        marks_pattern = r'Q{1}\s[0-9]+\sMarks'
 
         all_topics = []
 
         for idx, col in enumerate(base_df.columns[10:]):
             idx = idx +10
-            if re.match(options_pattern, col):
+            if re.match(self.options_pattern, col):
                 topic_df['options'].append(idx)
 
-            elif re.match(key_pattern, col):
+            elif re.match(self.key_pattern, col):
                 topic_df['keys'].append(idx)
-            elif re.match(marks_pattern, col):
+            elif re.match(self.marks_pattern, col):
                 topic_df['marks'].append(idx)
             else:
                 try:
@@ -116,13 +120,49 @@ class ItemAnalysis:
 
         self.all_sets = all_sets
         self.set_df = pd.DataFrame(set_dct)
+        
     
     def export(self):
         with pd.ExcelWriter(self.output_path) as writer:
             self.df.to_excel(writer, sheet_name='Raw Score')
             for set_no, df in self.all_sets:
                 df.to_excel(writer, sheet_name=f"Set {set_no} Analysis")
+            for set_no, df in self.correlation_matrix:
+                df.to_excel(writer, sheet_name=f"Set {set_no} Correlation Matrix")
             self.set_df.to_excel(writer, sheet_name="Set Statistics")
+
+    def correlation_calculation(self, df):
+        #Seggregate into Sets
+        sets = [i for _,i in df.groupby('Exam Set')]
+        marks_pattern = r'Q{1}\s[0-9]+\sMarks'
+        marks_index = []
+
+        self.correlation_matrix = []
+        for df in sets:
+            #Isolate Only Marks
+            for idx, col in enumerate(df.columns[10:]):
+                idx = idx +10
+                if re.match(self.marks_pattern, col):
+                    marks_index.append(idx)
+
+            new_df = df.iloc[:,[3]+marks_index]
+            new_df = new_df.set_index('Name')   #Sets the index to the Name
+
+            #Use Jaccard Score for similarity (Pairwise Comparison)
+            length = new_df.shape[0]
+
+            all_scores = []
+            for row in range(length):
+                cols = []
+                for col in range(length):
+                    cleaned_y1 = new_df.iloc[row, :]
+                    cleaned_y2 = new_df.iloc[col, :]
+
+                    cols.append(jaccard_score(cleaned_y1,cleaned_y2))
+                all_scores.append(cols)
+
+            pairwise_jaccard = pd.DataFrame(all_scores, index=new_df.index, columns=new_df.index)
+            self.correlation_matrix.append([df.iloc[0,1], pairwise_jaccard])    #appends Set No and Correlation Matrix
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
@@ -144,3 +184,4 @@ if __name__ == '__main__':
     item_analysis = ItemAnalysis(args.filename, args.output)
     item_analysis.run_calculation(item_analysis.df)
     item_analysis.export()
+
