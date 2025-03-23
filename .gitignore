@@ -4,3 +4,8 @@ item_analysis.ipynb
 __pycache__
 *.xlsx
 *.xls
+
+# deployment of app
+build
+dist
+dump

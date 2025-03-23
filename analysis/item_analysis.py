@@ -26,6 +26,7 @@ class ItemAnalysis:
 
         all_topics = []
 
+
         for idx, col in enumerate(base_df.columns[10:]):
             idx = idx +10
             if re.match(self.options_pattern, col):
@@ -51,12 +52,14 @@ class ItemAnalysis:
         all_topics_df = []
         #Create the df of each topic
         for topic_df in all_topics:
+            if len(topic_df['marks']) == 0: #When having multiple topics, evalbee adds another column thus creating a new "false topic". This skips the false topic.
+                continue
             base_cols = base_df.columns
             topic_lst = [base_df.columns[topic_df['topic']]]*len(topic_df['keys'])
             item_no = [f"Item No. {base_cols[i].split()[1]}" for i in topic_df['keys']]
+            
             #Topic Reliability
-            mapping_dict = {'A': 1, 'B': 2, 'C': 3, 'D': 4, 'E': 5}
-            reliability_score = pg.cronbach_alpha(base_df.iloc[:, topic_df['marks']].applymap(lambda x: mapping_dict.get(x,x)))[0]
+            reliability_score = pg.cronbach_alpha(base_df.iloc[:, topic_df['marks']])[0]
             reliability = [reliability_score]*len(topic_df['keys'])
 
             #Per Item Analysis
@@ -73,12 +76,18 @@ class ItemAnalysis:
             total_possible_score = len(topic_df['keys'])
             score = base_df.iloc[:,topic_df['marks']].sum(axis=1)/total_possible_score*100
 
+            #Per Item Analysis
             for key, option, mark in zip(topic_df['keys'], topic_df['options'], topic_df['marks']):
+                #Dataframe for the options, keys, and marks of each student
                 option_series = base_df.iloc[:,option]
                 key_series = base_df.iloc[:,key]
                 mark_series = base_df.iloc[:, mark]
+
+                #Difficulty(Percentage of incorrect to correct answers) and Correct Answer
                 difficulty.append(mark_series.sum()/mark_series.count())
-                correct_answer.append(key_series.iloc[0])
+                correct_answer.append(key_series.iloc[0]) 
+
+                #Count of each option
                 count_of_a.append(option_series.loc[option_series == ('A')].count())
                 count_of_b.append(option_series.loc[option_series == ('B')].count())
                 count_of_c.append(option_series.loc[option_series == ('C')].count())
@@ -88,7 +97,10 @@ class ItemAnalysis:
                 #Calculate the Discrimination
                 pbr = stats.pointbiserialr(mark_series, score)[0]
                 if np.isnan(pbr):
-                    discrimination.append('Unreliable (Perfect Score)')
+                    if difficulty[-1] == 0:
+                        discrimination.append('All Wrong')
+                    else:
+                        discrimination.append('All Correct')
                 else:
                     discrimination.append(pbr)
             
@@ -138,15 +150,19 @@ class ItemAnalysis:
         marks_index = []
 
         self.correlation_matrix = []
-        for df in sets:
+        def corr_calc(df, name_override=None):   #Calculates the correlation given df
             #Isolate Only Marks
             for idx, col in enumerate(df.columns[10:]):
                 idx = idx +10
                 if re.match(self.marks_pattern, col):
                     marks_index.append(idx)
 
-            new_df = df.iloc[:,[3]+marks_index]
-            new_df = new_df.set_index('Name')   #Sets the index to the Name
+            new_df = df.iloc[:,[2,3]+marks_index]
+
+            #Create Name and ID as the index
+            new_df['Name and ID'] = new_df.apply(lambda x: f"{x['Name']} | {x['Roll No']}", axis=1)
+            new_df = new_df.drop(columns=['Name', 'Roll No'])
+            new_df = new_df.set_index('Name and ID')   #Sets the index to the Name
 
             #Use Jaccard Score for similarity (Pairwise Comparison)
             length = new_df.shape[0]
@@ -162,9 +178,19 @@ class ItemAnalysis:
                 all_scores.append(cols)
 
             pairwise_jaccard = pd.DataFrame(all_scores, index=new_df.index, columns=new_df.index)
-            self.correlation_matrix.append([df.iloc[0,1], pairwise_jaccard])    #appends Set No and Correlation Matrix
+
+            if name_override == None:
+                self.correlation_matrix.append([df.iloc[0,1], pairwise_jaccard])    #appends Set No and Correlation Matrix
+            else:
+                self.correlation_matrix.append([name_override, pairwise_jaccard])
+        
+        for set in sets:
+            corr_calc(set)  #For Each Set
+        
+        corr_calc(df, "All Sets")   #Correlation for All
 
 if __name__ == '__main__':
+    # Create an argument parser if used via terminal
     parser = argparse.ArgumentParser(
         prog='EvalBee Item Analysis',
         description='Item Analysis Program from EvalBee export',
